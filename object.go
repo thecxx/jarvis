@@ -2,6 +2,11 @@ package jarvis
 
 import (
 	"runtime"
+	"sync"
+)
+
+var (
+	objOnce sync.Once
 )
 
 type Initializer interface {
@@ -20,6 +25,10 @@ func InitObject(obj interface{}) {
 	}
 	// Finalizer
 	if ob, ok := obj.(Finalizer); ok {
+		// Only register the shutdown handler once
+		objOnce.Do(func() {
+			RegisterShutdownHandler(runtime.GC)
+		})
 		runtime.SetFinalizer(ob, func(ob Finalizer) {
 			ob.Delete()
 		})
